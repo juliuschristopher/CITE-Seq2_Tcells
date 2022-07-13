@@ -141,27 +141,22 @@ T_cells <-RunUMAP(T_cells, dims = 1:24, assay = 'RNA', reduction.name = 'rna.uma
 T_cells_p1 <- DimPlot(T_cells, label = TRUE, reduction = "rna.umap", pt.size = 1.3, label.size = 6, label.box = TRUE, cols = col_con2) +  ggtitle("RNA Clustering") + theme_bw() + NoLegend()
 T_cells_p1 <- T_cells_p1 + theme(plot.title = element_text(color="black", size=25, face="bold"))
 
-DefaultAssay(T_cells) <- "RNA"
-FeaturePlot(T_cells, features = "Gzma", reduction = "rna.umap", shape.by = "Genotype", pt.size = 1)
-
-?FeaturePlot
-
-
 #ADT#
-DefaultAssay(All_cells) <- "ADT"
+DefaultAssay(T_cells) <- "ADT"
 
 #ADT normalisation#
-VariableFeatures(All_cells) <- rownames(All_cells[["ADT"]])
-All_cells <- NormalizeData(All_cells, normalization.method = "CLR", margin = 2)
-All_cells <- ScaleData(All_cells)
+VariableFeatures(T_cells) <- rownames(T_cells[["ADT"]])
+T_cells <- NormalizeData(T_cells, normalization.method = "CLR", margin = 2)
+T_cells <- ScaleData(T_cells)
+
 
 #ADT PCA#
-All_cells <- RunPCA(All_cells, reduction.name = 'apca', approx = FALSE)
-apca_variance <- All_cells@reductions$apca@stdev^2
+T_cells <- RunPCA(T_cells, reduction.name = 'apca', approx = FALSE)
+apca_variance <- T_cells@reductions$apca@stdev^2
 plot(apca_variance/sum(apca_variance), 
      ylab="Proportion of variance explained", 
      xlab="Principal component")
-abline(h = 0.01) #24
+abline(h = 0.01) #26
 
 #ADT clustering
 All_cells <- FindNeighbors(All_cells, dims = 1:24, reduction = "apca")

@@ -97,43 +97,55 @@ Total_cells[["Genotype"]] <- Idents(Total_cells)
 Idents(Total_cells) <- Total_cells$Mouse
 
 ####Filter out T cells###
+test <- Total_cells #30843
 
+#Based on no clonotype, ADT CD4 >2, ADT CD8 > 2 and RNA Cd19 < 1 expression
+DefaultAssay(test) <-  "ADT"
+T_cells <- subset(test, subset = cloneType == "NA") #15651
+T_cells <- subset(T_cells, subset = Cd4 > 2 | Cd8a > 2) #14140
 
-
+DefaultAssay(T_cells) <-  "RNA"
+T_cells <- subset(T_cells, subset = Cd19 < 1) #13377
 
 
 ####Dimensionality reduction and clustering####
 ##Normalise subset##
-DefaultAssay(All_cells) <- "RNA" #For log normalisation
+DefaultAssay(T_cells) <- "RNA" #For log normalisation
 
 #RNA normalisation#
-All_cells <- NormalizeData(All_cells, verbose = TRUE)
-All_cells <- FindVariableFeatures(All_cells, nfeatures = 3000)
-All_cells <- ScaleData(All_cells)
+T_cells <- NormalizeData(T_cells, verbose = TRUE)
+T_cells <- FindVariableFeatures(T_cells, nfeatures = 3000)
+T_cells <- ScaleData(T_cells)
 
 #Visualisation#
-top20 <-  head(VariableFeatures(All_cells), 20)
-plot1.1 <-  VariableFeaturePlot(All_cells)
+top20 <-  head(VariableFeatures(T_cells), 20)
+plot1.1 <-  VariableFeaturePlot(T_cells)
 top20_plot <-  LabelPoints(plot = plot1.1, points = top20, repel = TRUE, xnudge = 0, ynudge = 0)
 top20_plot
 
 #RNA PCA#
-All_cells <- RunPCA(All_cells, verbose = FALSE, features = VariableFeatures(object = All_cells))
-pca_variance <- All_cells@reductions$pca@stdev^2
+T_cells <- RunPCA(T_cells, verbose = FALSE, features = VariableFeatures(object = T_cells))
+pca_variance <- T_cells@reductions$pca@stdev^2
 plot(pca_variance/sum(pca_variance), 
      ylab="Proportion of variance explained", 
      xlab="Principal component")
-abline(h = 0.01) #25
+abline(h = 0.01) #24
 
 #RNA clustering#
-DefaultAssay(All_cells) <- "RNA" #For log normalisation
+DefaultAssay(T_cells) <- "RNA" #For log normalisation
 
-All_cells <- FindNeighbors(All_cells, dims = 1:25)
-All_cells <- FindClusters(All_cells, resolution = 0.5, verbose = FALSE) #0.5 for the resolution
-clustree(All_cells, prefix = "RNA_snn_res.") + theme(legend.position="bottom")
-All_cells <-RunUMAP(All_cells, dims = 1:25, assay = 'RNA', reduction.name = 'rna.umap', reduction.key = 'rnaUMAP_')
-All_cells_p1 <- DimPlot(All_cells, label = TRUE, reduction = "rna.umap", pt.size = 1.3, label.size = 6, label.box = TRUE, cols = col_con2) +  ggtitle("RNA Clustering") + theme_bw() + NoLegend()
-All_cells_p1 <- All_cells_p1 + theme(plot.title = element_text(color="black", size=25, face="bold"))
+T_cells <- FindNeighbors(T_cells, dims = 1:24)
+T_cells <- FindClusters(T_cells, resolution = 0.3, verbose = FALSE) #0.3 for the resolution
+clustree(T_cells, prefix = "RNA_snn_res.") + theme(legend.position="bottom")
+T_cells <-RunUMAP(T_cells, dims = 1:24, assay = 'RNA', reduction.name = 'rna.umap', reduction.key = 'rnaUMAP_')
+T_cells_p1 <- DimPlot(T_cells, label = TRUE, reduction = "rna.umap", pt.size = 1.3, label.size = 6, label.box = TRUE, cols = col_con2) +  ggtitle("RNA Clustering") + theme_bw() + NoLegend()
+T_cells_p1 <- T_cells_p1 + theme(plot.title = element_text(color="black", size=25, face="bold"))
+
+DefaultAssay(T_cells) <- "RNA"
+FeaturePlot(T_cells, features = "Gzma", reduction = "rna.umap", shape.by = "Genotype", pt.size = 1)
+
+?FeaturePlot
+
 
 #ADT#
 DefaultAssay(All_cells) <- "ADT"
